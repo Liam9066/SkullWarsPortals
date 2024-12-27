@@ -1,0 +1,21 @@
+# EndPortalsRefined Configuration
+
+# Destination location when players enter an end portal
+destination:
+  world: "world"  # World name where players will be teleported
+  x: 0            # X coordinate for the teleport destination
+  y: 80           # Y coordinate for the teleport destination
+  z: 0            # Z coordinate for the teleport destination
+
+# Messages configuration
+messages:
+  portal-created: "&e&lSkull&6&lWars &8» &cDarkzone&f portal has been created."
+  teleported: "&e&lSkull&6&lWars &8» &fYou have been teleported to the &cdarkzone"
+  cannot-place: "&e&lSkull&6&lWars &8» &cYou are placing portal blocks too close to another portal."
+  cannot-break: "&e&lSkull&6&lWars &8» &cYou must use a portal-breaker in order to be able to break portals."
+
+# Hologram configuration
+hologram:
+  text:
+    - "&c&lDarkzone Portal"
+  height: 3.0              # Height above the portal where the hologram will appear
