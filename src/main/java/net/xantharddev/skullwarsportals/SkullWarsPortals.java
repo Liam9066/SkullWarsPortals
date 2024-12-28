@@ -6,13 +6,16 @@ import com.google.gson.reflect.TypeToken;
 import com.massivecraft.factions.Board;
 import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.Faction;
+import de.tr7zw.nbtapi.NBT;
 import eu.decentsoftware.holograms.api.DHAPI;
+import net.minecraft.server.v1_8_R3.NBTTagCompound;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -21,12 +24,15 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.*;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SkullWarsPortals extends JavaPlugin implements Listener {
     private final Set<UUID> teleportCooldown = new HashSet<>();
@@ -42,7 +48,9 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
         gson = new GsonBuilder().setPrettyPrinting().create();
 
-        dataFile = new File(getDataFolder(), "portal_locations.json");
+        dataFile = new File(getDataFolder(), "data/portal_locations.json");
+
+        getCommand("skullwarsportals").setExecutor(new PortalCommand(this));
 
         loadPortalLocations();
 
@@ -134,7 +142,10 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
             if (event.getClickedBlock() == null) return;
             if (event.getAction() != Action.LEFT_CLICK_BLOCK) return;
             if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL) return;
-            if (event.getItem() == null || event.getItem().getType() != Material.STICK) return;
+            if (event.getItem() == null) return;
+
+            // Check if the item is our custom portal remover using lore
+            if (!NBT.get(event.getItem(), nbt -> (boolean) nbt.getBoolean("isPortalBreaker"))) return;
 
             Location clickedLoc = event.getClickedBlock().getLocation();
 
@@ -354,13 +365,14 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         }
     }
 
-    private String colour(String text) {
+    public String colour(String text) {
         return ChatColor.translateAlternateColorCodes('&', text);
     }
 
-    private List<String> colourList(List<String> list) {
-        list.forEach(this::colour);
-        return list;
+    public List<String> colourList(List<String> stringList) {
+        return stringList.stream()
+                .map(this::colour)
+                .collect(Collectors.toList());
     }
 }
 

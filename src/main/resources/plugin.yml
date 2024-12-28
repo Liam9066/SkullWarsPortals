@@ -3,3 +3,9 @@ main: ${project.groupId}.${project.artifactId}
 version: ${project.version}
 authors: [Zyromate, Xanthard]
 
+commands:
+  skullwarsportals:
+    description: Main command for SkullWarsPortals plugin
+    usage: /<command> giveremover <player>
+    aliases: [portals, skportals]
+
