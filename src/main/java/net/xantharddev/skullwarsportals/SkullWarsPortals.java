@@ -8,14 +8,12 @@ import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.Faction;
 import de.tr7zw.nbtapi.NBT;
 import eu.decentsoftware.holograms.api.DHAPI;
-import net.minecraft.server.v1_8_R3.NBTTagCompound;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,105 +22,40 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class SkullWarsPortals extends JavaPlugin implements Listener {
     private final Set<UUID> teleportCooldown = new HashSet<>();
     private final Map<String, BukkitTask> detectionTasks = new HashMap<>();
     private final Map<String, Set<Location>> portalLocations = new HashMap<>();
+    private final ChatUtils chatUtils = new ChatUtils();
     private File dataFile;
     private Gson gson;
+    private PortalDataManager portalDataManager;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         getServer().getPluginManager().registerEvents(this, this);
 
-        gson = new GsonBuilder().setPrettyPrinting().create();
-
-        dataFile = new File(getDataFolder(), "data/portal_locations.json");
+        portalDataManager = new PortalDataManager(this);
+        portalLocations.putAll(portalDataManager.loadPortalLocations());
+        Bukkit.getScheduler().runTaskLater(this, this::recreateHolograms, 40L);
 
         getCommand("skullwarsportals").setExecutor(new PortalCommand(this));
 
-        loadPortalLocations();
-
-        Bukkit.getScheduler().runTaskLater(this, this::recreateHolograms, 40L);
-
-        getLogger().info(ChatColor.GREEN + "SkullWarsPorts successfully enabled!");
+        getLogger().info("SkullWarsPortals successfully enabled!");
     }
 
     @Override
-    public void onDisable() {savePortalLocations();}
-
-    /**
-     * Save portal locations to a JSON file
-     */
-    private void savePortalLocations() {
-        Map<String, List<Map<String, Object>>> portalData = new HashMap<>();
-
-        for (Map.Entry<String, Set<Location>> entry : portalLocations.entrySet()) {
-            List<Map<String, Object>> locationsData = new ArrayList<>();
-            for (Location loc : entry.getValue()) {
-                Map<String, Object> locationData = new HashMap<>();
-                locationData.put("x", loc.getX());
-                locationData.put("y", loc.getY());
-                locationData.put("z", loc.getZ());
-                locationData.put("world", loc.getWorld().getName());
-                locationsData.add(locationData);
-            }
-            portalData.put(entry.getKey(), locationsData);
-        }
-
-        try (Writer writer = new FileWriter(dataFile)) {
-            gson.toJson(portalData, writer);
-        } catch (IOException e) {
-            getLogger().warning("Failed to save portal locations: " + e.getMessage());
-        }
-    }
-
-
-    /**
-     * Load portal locations from the JSON file
-     */
-    private void loadPortalLocations() {
-        // Check if the file exists
-        if (!dataFile.exists()) return;
-
-        // Read the JSON file and deserialize into the portalLocations map
-        try (Reader reader = new FileReader(dataFile)) {
-            Type type = new TypeToken<Map<String, List<Map<String, Object>>>>() {}.getType();
-            Map<String, List<Map<String, Object>>> portalData = gson.fromJson(reader, type);
-
-            if (portalData != null) {
-                for (Map.Entry<String, List<Map<String, Object>>> entry : portalData.entrySet()) {
-                    Set<Location> locations = new HashSet<>();
-                    for (Map<String, Object> locationData : entry.getValue()) {
-                        String worldName = (String) locationData.get("world"); // Retrieve the world name
-                        World world = Bukkit.getWorld(worldName);
-                        if (world == null) {
-                            getLogger().warning("World not found: " + worldName + ". Skipping this portal.");
-                            continue; // Skip this portal if the world doesn't exist
-                        }
-                        double x = (double) locationData.get("x");
-                        double y = (double) locationData.get("y");
-                        double z = (double) locationData.get("z");
-                        Location location = new Location(world, x, y, z);
-                        locations.add(location);
-                    }
-                    portalLocations.put(entry.getKey(), locations);
-                }
-            }
-        } catch (IOException e) {
-            getLogger().warning("Failed to load portal locations: " + e.getMessage());
-        }
+    public void onDisable() {
+        portalDataManager.savePortalLocations(portalLocations);
     }
 
     /**
@@ -140,8 +73,9 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             if (event.getClickedBlock() == null) return;
-            if (event.getAction() != Action.LEFT_CLICK_BLOCK) return;
-            if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL) return;
+            if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+            if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL)
+                return;
             if (event.getItem() == null) return;
 
             // Check if the item is our custom portal remover using lore
@@ -186,11 +120,12 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (event.getBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getBlock().getType() != Material.ENDER_PORTAL) return;
+        if (event.getBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getBlock().getType() != Material.ENDER_PORTAL)
+            return;
         // Check for staff in creative making sure they cant nuke someones portal accidentally (Safety Feature)
         if (isPortalWithinRadius(event.getBlock().getLocation(), 1)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(colour(getConfig().getString("messages.cannot-break")));
+            event.getPlayer().sendMessage(chatUtils.colour(getConfig().getString("messages.cannot-break")));
         }
 
     }
@@ -204,7 +139,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         // If we do not check correctly players end up being able creating duplicate of our stored "portals" and breaking the system
         if (isPortalWithinRadius(placedLocation, 6)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(colour(getConfig().getString("messages.cannot-place")));
+            event.getPlayer().sendMessage(chatUtils.colour(getConfig().getString("messages.cannot-place")));
             return;
         }
 
@@ -218,8 +153,9 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
     /**
      * Algorithm to check for portals inside of a radius
+     *
      * @param interactedLocation Location the player interacted with
-     * @param radius Radius to check in
+     * @param radius             Radius to check in
      * @return Whether or not a portal is inside of the radius from the interacted Loc
      */
     private boolean isPortalWithinRadius(Location interactedLocation, int radius) {
@@ -245,8 +181,9 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
     /**
      * Logic to work out if an end portal has been created
+     *
      * @param placedBlock Block placed by player
-     * @param fac Faction at that location
+     * @param fac         Faction at that location
      */
     private void checkForEndPortal(Block placedBlock, Faction fac) {
         Set<Location> portalBlocks = new HashSet<>();
@@ -300,10 +237,21 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
     }
 
     private void handleEndPortalCreation(Set<Location> portalBlocks, Location center, Faction fac) {
-        String holoname = createHologram(center);
-        portalLocations.put(holoname, portalBlocks);
-        notifyNearbyPlayers(center, fac.getOnlinePlayers());
+        String holoName = createHologram(center);
+        portalLocations.put(holoName, portalBlocks);
+
+        try {
+            Method method = fac.getClass().getMethod("getOnlinePlayers");
+            @SuppressWarnings("unchecked")
+            List<Player> onlinePlayers = (List<Player>) method.invoke(fac);
+            notifyNearbyPlayers(center, onlinePlayers);
+        } catch (NoSuchMethodException e) {
+            Bukkit.getLogger().warning("getOnlinePlayers() method does not exist for this version of Factions. Skipping player notification.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @EventHandler
     public void onPlayerPortal(PlayerPortalEvent event) {
@@ -332,7 +280,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         Location destination = new Location(world, x, y, z);
 
         player.teleport(destination);
-        player.sendMessage(colour(getConfig().getString("messages.teleported")));
+        player.sendMessage(chatUtils.colour(getConfig().getString("messages.teleported")));
     }
 
     private String createHologram(Location portalLoc) {
@@ -341,7 +289,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
 
     private String createHologram(Location portalLoc, String holoName) {
-        List<String> holoText = colourList(getConfig().getStringList("hologram.text"));
+        List<String> holoText = chatUtils.colourList(getConfig().getStringList("hologram.text"));
         double holoHeight = getConfig().getDouble("hologram.height");
         Location holoLoc = portalLoc.clone().add(0, holoHeight, 0);
 
@@ -356,23 +304,12 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
     }
 
     private void notifyNearbyPlayers(Location portalLocation, Collection<Player> players) {
-        String createMessage = colour(getConfig().getString("messages.portal-created"));
+        String createMessage = chatUtils.colour(getConfig().getString("messages.portal-created"));
 
         for (Player player : players) {
-            if (player.getLocation().distance(portalLocation) <= 50) {
+            if (player.getLocation().distance(portalLocation) <= 25) {
                 player.sendMessage(createMessage);
             }
         }
     }
-
-    public String colour(String text) {
-        return ChatColor.translateAlternateColorCodes('&', text);
-    }
-
-    public List<String> colourList(List<String> stringList) {
-        return stringList.stream()
-                .map(this::colour)
-                .collect(Collectors.toList());
-    }
 }
-
