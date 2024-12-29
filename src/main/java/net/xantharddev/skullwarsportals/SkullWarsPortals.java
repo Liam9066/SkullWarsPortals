@@ -105,7 +105,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             if (event.getClickedBlock() == null) return;
             if (event.getAction() != Action.LEFT_CLICK_BLOCK) return;
-            if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL)
+            if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME )
                 return;
             if (event.getItem() == null) return;
 
@@ -113,7 +113,6 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
             Location clickedLoc = event.getClickedBlock().getLocation();
 
             Bukkit.getScheduler().runTask(this, () -> clickedLoc.getBlock().setType(Material.AIR));
-            event.getPlayer().sendMessage("conducting a test");
         });
     }
     /**
