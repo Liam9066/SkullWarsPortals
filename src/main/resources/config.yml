@@ -1,10 +1,12 @@
-#
+# Permissions:
+# skportals.reload - /skp reload
+# skullwarsportals.giveremover /skportals giveremover (player)
 
 destination:
-  world: "world"  # World name where players will be teleported
-  x: 0            # X coordinate for the teleport destination
-  y: 80           # Y coordinate for the teleport destination
-  z: 0            # Z coordinate for the teleport destination
+  world: "Darkzone"  # World name where players will be teleported
+  x: -561            # X coordinate for the teleport destination
+  y: 100             # Y coordinate for the teleport destination
+  z: 35              # Z coordinate for the teleport destination
 
 messages:
   portal-created: "&e&lSkull&6&lWars &8» &cDarkzone&f portal has been created."
@@ -14,10 +16,12 @@ messages:
   no-permission: "&e&lSkull&6&lWars &8» &cYou don't have permission to use this command."
   remover-received: "&e&lSkull&6&lWars &8» &fYou have received a &cPortal Remover&f."
   player-not-found: "&e&lSkull&6&lWars &8» &cPlayer not found."
+  reload: "&e&lSkull&6&lWars &8» &eSkullWarsPortals &7 has been reloaded."
 
 hologram:
   text:
     - "&c&lDarkzone Portal"
+    - "&c&nPvP&7 is &a&nenabled&7 on the other side!"
   height: 3.0              # Height above the portal where the hologram will appear
 
 items:

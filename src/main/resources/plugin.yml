@@ -5,7 +5,11 @@ authors: [Zyromate, Xanthard]
 
 commands:
   skullwarsportals:
-    description: Main command for SkullWarsPortals plugin
+    description: Gives the player a portal remover
     usage: /<command> giveremover <player>
-    aliases: [portals, skportals]
+    aliases: [portal, skportals]
+  skullwarsportalsreload:
+    description: Reloads the plugin
+    usage: /<command> reload
+    aliases: [swp, skp, portal]
 

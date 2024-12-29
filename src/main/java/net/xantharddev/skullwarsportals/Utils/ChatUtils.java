@@ -1,4 +1,4 @@
-package net.xantharddev.skullwarsportals;
+package net.xantharddev.skullwarsportals.Utils;
 
 import org.bukkit.ChatColor;
 

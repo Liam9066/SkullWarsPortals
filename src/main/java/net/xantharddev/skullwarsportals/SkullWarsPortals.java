@@ -1,13 +1,15 @@
 package net.xantharddev.skullwarsportals;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import com.massivecraft.factions.Board;
 import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.Faction;
 import de.tr7zw.nbtapi.NBT;
 import eu.decentsoftware.holograms.api.DHAPI;
+import net.xantharddev.skullwarsportals.DataManagement.PortalDataManager;
+import net.xantharddev.skullwarsportals.Utils.ChatUtils;
+import net.xantharddev.skullwarsportals.cmds.PortalCommand;
+import net.xantharddev.skullwarsportals.cmds.ReloadCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -27,7 +29,6 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.*;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.*;
 
 public class SkullWarsPortals extends JavaPlugin implements Listener {
@@ -49,6 +50,8 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskLater(this, this::recreateHolograms, 40L);
 
         getCommand("skullwarsportals").setExecutor(new PortalCommand(this));
+        getCommand("skullwarsportalsreload").setExecutor(new ReloadCommand(this));
+
 
         getLogger().info("SkullWarsPortals successfully enabled!");
     }
@@ -255,14 +258,22 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerPortal(PlayerPortalEvent event) {
-        if (event.getCause() != PlayerPortalEvent.TeleportCause.END_PORTAL || teleportCooldown.contains(event.getPlayer().getUniqueId())) {
+        if (event.getCause() != PlayerPortalEvent.TeleportCause.END_PORTAL) return;
+
+        Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
+
+        if (teleportCooldown.contains(playerId)) {
+            player.sendMessage(ChatColor.RED + "You are on cooldown! Please wait.");
             return;
         }
-        event.setCancelled(true);
-        teleportPlayer(event.getPlayer());
-        teleportCooldown.add(event.getPlayer().getUniqueId());
 
-        Bukkit.getScheduler().runTaskLater(this, () -> teleportCooldown.remove(event.getPlayer().getUniqueId()), 60L);
+        event.setCancelled(true);
+        teleportPlayer(player);
+
+        teleportCooldown.add(playerId);
+
+        Bukkit.getScheduler().runTaskLater(this, () -> teleportCooldown.remove(playerId), 60L); // 60 ticks = 3 seconds
     }
 
     private void teleportPlayer(Player player) {
@@ -283,6 +294,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         player.sendMessage(chatUtils.colour(getConfig().getString("messages.teleported")));
     }
 
+
     private String createHologram(Location portalLoc) {
         return createHologram(portalLoc, "endportal_" + UUID.randomUUID());
     }
@@ -294,14 +306,15 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         Location holoLoc = portalLoc.clone().add(0, holoHeight, 0);
 
         try {
-            DHAPI.createHologram(holoName, holoLoc, holoText); // I do not want to use save to file option here as it is a bit of a trouble to maintain
-            getLogger().info("Hologram created at " + holoLoc);
+            // Create the hologram with the specified name, location, and text
+            DHAPI.createHologram(holoName, holoLoc, holoText);
         } catch (Exception e) {
             getLogger().warning("Failed to create hologram: " + e.getMessage());
         }
 
         return holoName;
     }
+
 
     private void notifyNearbyPlayers(Location portalLocation, Collection<Player> players) {
         String createMessage = chatUtils.colour(getConfig().getString("messages.portal-created"));

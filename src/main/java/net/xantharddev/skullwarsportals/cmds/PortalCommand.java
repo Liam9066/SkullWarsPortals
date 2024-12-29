@@ -1,6 +1,8 @@
-package net.xantharddev.skullwarsportals;
+package net.xantharddev.skullwarsportals.cmds;
 
 import de.tr7zw.nbtapi.NBT;
+import net.xantharddev.skullwarsportals.Utils.ChatUtils;
+import net.xantharddev.skullwarsportals.SkullWarsPortals;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;

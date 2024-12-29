@@ -1,8 +1,9 @@
-package net.xantharddev.skullwarsportals;
+package net.xantharddev.skullwarsportals.DataManagement;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import net.xantharddev.skullwarsportals.SkullWarsPortals;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
