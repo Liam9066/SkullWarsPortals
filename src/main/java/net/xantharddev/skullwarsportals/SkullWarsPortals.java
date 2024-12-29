@@ -77,28 +77,31 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerInteractR(PlayerInteractEvent event) {
-            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-                if (event.getClickedBlock() == null) return;
-                if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-                if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL)
-                    return;
-                if (event.getItem() == null) return;
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            if (event.getClickedBlock() == null) return;
+            if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+            if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL)
+                return;
+            if (event.getItem() == null) return;
 
-                if (!NBT.get(event.getItem(), nbt -> (boolean) nbt.getBoolean("isPortalBreaker"))) return;
-                Location clickedLoc = event.getClickedBlock().getLocation();
+            if (!NBT.get(event.getItem(), nbt -> (boolean) nbt.getBoolean("isPortalBreaker"))) return;
+            Location clickedLoc = event.getClickedBlock().getLocation();
 
-                for (Map.Entry<String, Set<Location>> entry : portalLocations.entrySet()) {
-                    Set<Location> allPortalLocations = getAllPortalBlocks(entry.getValue());
-                    if (allPortalLocations.contains(clickedLoc)) {
-                        portalLocations.remove(entry.getKey());
-                        Bukkit.getScheduler().runTask(this, () -> {
-                            allPortalLocations.forEach(loc -> loc.getBlock().setType(Material.AIR));
-                            DHAPI.removeHologram(entry.getKey());
-                        });
-                    }
+            Iterator<Map.Entry<String, Set<Location>>> iterator = portalLocations.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Set<Location>> entry = iterator.next();
+                Set<Location> allPortalLocations = getAllPortalBlocks(entry.getValue());
+                if (allPortalLocations.contains(clickedLoc)) {
+                    iterator.remove();
+                    Bukkit.getScheduler().runTask(this, () -> {
+                        allPortalLocations.forEach(loc -> loc.getBlock().setType(Material.AIR));
+                        DHAPI.removeHologram(entry.getKey());
+                    });
                 }
-            });
-        }
+            }
+        });
+    }
+
 
     @EventHandler
     public void onPlayerInteractL(PlayerInteractEvent event) {
