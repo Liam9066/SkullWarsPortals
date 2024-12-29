@@ -76,32 +76,46 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
 
     @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
+    public void onPlayerInteractR(PlayerInteractEvent event) {
+            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                if (event.getClickedBlock() == null) return;
+                if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+                if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL)
+                    return;
+                if (event.getItem() == null) return;
+
+                if (!NBT.get(event.getItem(), nbt -> (boolean) nbt.getBoolean("isPortalBreaker"))) return;
+                Location clickedLoc = event.getClickedBlock().getLocation();
+
+                for (Map.Entry<String, Set<Location>> entry : portalLocations.entrySet()) {
+                    Set<Location> allPortalLocations = getAllPortalBlocks(entry.getValue());
+                    if (allPortalLocations.contains(clickedLoc)) {
+                        portalLocations.remove(entry.getKey());
+                        Bukkit.getScheduler().runTask(this, () -> {
+                            allPortalLocations.forEach(loc -> loc.getBlock().setType(Material.AIR));
+                            DHAPI.removeHologram(entry.getKey());
+                        });
+                    }
+                }
+            });
+        }
+
+    @EventHandler
+    public void onPlayerInteractL(PlayerInteractEvent event) {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             if (event.getClickedBlock() == null) return;
-            if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+            if (event.getAction() != Action.LEFT_CLICK_BLOCK) return;
             if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL)
                 return;
             if (event.getItem() == null) return;
 
-            // Check if the item is our custom portal remover using lore
             if (!NBT.get(event.getItem(), nbt -> (boolean) nbt.getBoolean("isPortalBreaker"))) return;
-
             Location clickedLoc = event.getClickedBlock().getLocation();
 
-            for (Map.Entry<String, Set<Location>> entry : portalLocations.entrySet()) {
-                Set<Location> allPortalLocations = getAllPortalBlocks(entry.getValue());
-                if (allPortalLocations.contains(clickedLoc)) {
-                    portalLocations.remove(entry.getKey());
-                    Bukkit.getScheduler().runTask(this, () -> {
-                        allPortalLocations.forEach(loc -> loc.getBlock().setType(Material.AIR));
-                        DHAPI.removeHologram(entry.getKey());
-                    });
-                }
-            }
+            Bukkit.getScheduler().runTask(this, () -> clickedLoc.getBlock().setType(Material.AIR));
+            event.getPlayer().sendMessage("conducting a test");
         });
     }
-
     /**
      * @param portalBlocks Base blocks from the portal (the 3x3 inside)
      * @return All of the portal blocks - INCLUDING the outside frames
