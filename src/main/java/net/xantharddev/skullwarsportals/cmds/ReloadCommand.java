@@ -25,15 +25,15 @@ public class ReloadCommand implements CommandExecutor {
 
             try {
                 plugin.reloadConfig();
-                sender.sendMessage(ChatColor.GREEN + "SkullWarsPortals configuration reloaded successfully!");
+                sender.sendMessage(chatUtils.colour(plugin.getConfig().getString("messages.reload")));
             } catch (Exception e) {
-                sender.sendMessage(ChatColor.RED + "Failed to reload configuration. Check the console for details.");
+                sender.sendMessage(ChatColor.RED + "messages.reload-fail");
                 e.printStackTrace();
             }
             return true;
         }
 
-        sender.sendMessage(ChatColor.RED + "Invalid usage. Try /skp reload.");
+        sender.sendMessage(chatUtils.colour(plugin.getConfig().getString("messages.reload-usage")));
         return true;
     }
 }

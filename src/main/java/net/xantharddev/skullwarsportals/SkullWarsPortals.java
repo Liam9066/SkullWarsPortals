@@ -6,10 +6,11 @@ import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.Faction;
 import de.tr7zw.nbtapi.NBT;
 import eu.decentsoftware.holograms.api.DHAPI;
-import net.xantharddev.skullwarsportals.DataManagement.PortalDataManager;
+import net.xantharddev.skullwarsportals.Managers.PortalDataManager;
 import net.xantharddev.skullwarsportals.Utils.ChatUtils;
 import net.xantharddev.skullwarsportals.cmds.PortalCommand;
 import net.xantharddev.skullwarsportals.cmds.ReloadCommand;
+import net.xantharddev.skullwarsportals.cmds.RemovePortalsCmd;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -51,6 +52,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
         getCommand("skullwarsportals").setExecutor(new PortalCommand(this));
         getCommand("skullwarsportalsreload").setExecutor(new ReloadCommand(this));
+        getCommand("skportalsremoveall").setExecutor(new RemovePortalsCmd(this));
 
 
         getLogger().info("SkullWarsPortals successfully enabled!");
@@ -58,6 +60,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        // Save portal locations when the plugin is disabled
         portalDataManager.savePortalLocations(portalLocations);
     }
 
@@ -281,7 +284,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         World world = Bukkit.getWorld(worldName);
 
         if (world == null) {
-            player.sendMessage(ChatColor.RED + "Destination world not found!");
+            player.sendMessage(chatUtils.colour(getConfig().getString("messages.destination-not-found")));
             return;
         }
 
@@ -294,11 +297,13 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         player.sendMessage(chatUtils.colour(getConfig().getString("messages.teleported")));
     }
 
-
     private String createHologram(Location portalLoc) {
         return createHologram(portalLoc, "endportal_" + UUID.randomUUID());
     }
 
+    public Map<String, Set<Location>> getPortalLocations() {
+        return portalLocations;
+    }
 
     private String createHologram(Location portalLoc, String holoName) {
         List<String> holoText = chatUtils.colourList(getConfig().getStringList("hologram.text"));
@@ -306,7 +311,6 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         Location holoLoc = portalLoc.clone().add(0, holoHeight, 0);
 
         try {
-            // Create the hologram with the specified name, location, and text
             DHAPI.createHologram(holoName, holoLoc, holoText);
         } catch (Exception e) {
             getLogger().warning("Failed to create hologram: " + e.getMessage());
@@ -314,7 +318,6 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
         return holoName;
     }
-
 
     private void notifyNearbyPlayers(Location portalLocation, Collection<Player> players) {
         String createMessage = chatUtils.colour(getConfig().getString("messages.portal-created"));
@@ -324,5 +327,8 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
                 player.sendMessage(createMessage);
             }
         }
+    }
+    public PortalDataManager getPortalDataManager() {
+        return portalDataManager;
     }
 }

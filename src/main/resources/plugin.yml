@@ -8,8 +8,15 @@ commands:
     description: Gives the player a portal remover
     usage: /<command> giveremover <player>
     aliases: [portal, skportals]
+    permission: skullwarsportals.giveremover
   skullwarsportalsreload:
     description: Reloads the plugin
     usage: /<command> reload
     aliases: [swp, skp, portal]
+    permission: skullwarsportals.reload
+  skportalsremoveall:
+     description: Removes all active portals.
+     usage: /<command>
+     permission: skullwarsportals.deleteallportals
+
 

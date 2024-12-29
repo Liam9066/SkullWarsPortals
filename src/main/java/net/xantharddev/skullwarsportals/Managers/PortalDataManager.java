@@ -1,4 +1,4 @@
-package net.xantharddev.skullwarsportals.DataManagement;
+package net.xantharddev.skullwarsportals.Managers;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,20 +16,27 @@ public class PortalDataManager {
     private final File dataFile;
     private final Gson gson;
 
+    private static PortalDataManager instance;
+
     public PortalDataManager(SkullWarsPortals plugin) {
         this.gson = new GsonBuilder().setPrettyPrinting().create();
         this.dataFile = new File(plugin.getDataFolder(), "portal_locations.json");
 
-        // Ensure the data folder exists
         if (!plugin.getDataFolder().exists()) {
             plugin.getDataFolder().mkdirs();
         }
+
+        instance = this;
     }
 
+    public static PortalDataManager getInstance() {
+        return instance;
+    }
 
     /**
      * Save portal locations to a JSON file.
      */
+
     public void savePortalLocations(Map<String, Set<Location>> portalLocations) {
         Map<String, List<Map<String, Object>>> portalData = new HashMap<>();
 
@@ -56,6 +63,7 @@ public class PortalDataManager {
     /**
      * Load portal locations from the JSON file.
      */
+
     public Map<String, Set<Location>> loadPortalLocations() {
         Map<String, Set<Location>> portalLocations = new HashMap<>();
 
@@ -92,4 +100,5 @@ public class PortalDataManager {
 
         return portalLocations;
     }
+
 }
