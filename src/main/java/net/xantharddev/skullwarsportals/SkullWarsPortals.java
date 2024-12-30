@@ -108,7 +108,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             if (event.getClickedBlock() == null) return;
             if (event.getAction() != Action.LEFT_CLICK_BLOCK) return;
-            if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME )
+            if (event.getClickedBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getClickedBlock().getType() != Material.ENDER_PORTAL)
                 return;
             if (event.getItem() == null) return;
 
@@ -141,9 +141,10 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onBlockBreak(BlockBreakEvent event, PlayerInteractEvent e) {
         if (event.getBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getBlock().getType() != Material.ENDER_PORTAL)
             return;
+        if (NBT.get(e.getItem(), nbt -> (boolean) nbt.getBoolean("isPortalBreaker"))) return;
         // Check for staff in creative making sure they cant nuke someones portal accidentally (Safety Feature)
         if (isPortalWithinRadius(event.getBlock().getLocation(), 1)) {
             event.setCancelled(true);
@@ -292,7 +293,7 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
 
         teleportCooldown.add(playerId);
 
-        Bukkit.getScheduler().runTaskLater(this, () -> teleportCooldown.remove(playerId), 60L); // 60 ticks = 3 seconds
+        Bukkit.getScheduler().runTaskLater(this, () -> teleportCooldown.remove(playerId), 60L);
     }
 
     private void teleportPlayer(Player player) {
