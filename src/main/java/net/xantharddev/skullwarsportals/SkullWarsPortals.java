@@ -5,6 +5,7 @@ import com.massivecraft.factions.Board;
 import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.Faction;
 import de.tr7zw.nbtapi.NBT;
+import de.tr7zw.nbtapi.NBTItem;
 import eu.decentsoftware.holograms.api.DHAPI;
 import net.xantharddev.skullwarsportals.Managers.PortalDataManager;
 import net.xantharddev.skullwarsportals.Utils.ChatUtils;
@@ -25,6 +26,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -47,16 +49,23 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
 
         portalDataManager = new PortalDataManager(this);
-        portalLocations.putAll(portalDataManager.loadPortalLocations());
-        Bukkit.getScheduler().runTaskLater(this, this::recreateHolograms, 40L);
+        portalDataManager.loadPortalLocations().thenAcceptAsync(loadedPortals -> {
+            portalLocations.putAll(loadedPortals);
+
+            Bukkit.getScheduler().runTask(this, this::recreateHolograms);
+            getLogger().info("Portal locations loaded and holograms recreated.");
+        }).exceptionally(ex -> {
+            getLogger().severe("Failed to load portal locations: " + ex.getMessage());
+            return null;
+        });
 
         getCommand("skullwarsportals").setExecutor(new PortalCommand(this));
         getCommand("skullwarsportalsreload").setExecutor(new ReloadCommand(this));
         getCommand("skportalsremoveall").setExecutor(new RemovePortalsCmd(this));
 
-
         getLogger().info("SkullWarsPortals successfully enabled!");
     }
+
 
     @Override
     public void onDisable() {
@@ -141,17 +150,30 @@ public class SkullWarsPortals extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event, PlayerInteractEvent e) {
-        if (event.getBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getBlock().getType() != Material.ENDER_PORTAL)
+    public void onBlockBreak(BlockBreakEvent event) {
+        // Check if the block being broken is an Ender Portal Frame or Ender Portal
+        if (event.getBlock().getType() != Material.ENDER_PORTAL_FRAME && event.getBlock().getType() != Material.ENDER_PORTAL) {
             return;
-        if (NBT.get(e.getItem(), nbt -> (boolean) nbt.getBoolean("isPortalBreaker"))) return;
-        // Check for staff in creative making sure they cant nuke someones portal accidentally (Safety Feature)
-        if (isPortalWithinRadius(event.getBlock().getLocation(), 1)) {
-            event.setCancelled(true);
-            event.getPlayer().sendMessage(chatUtils.colour(getConfig().getString("messages.cannot-break")));
         }
 
+        Player player = event.getPlayer();
+        ItemStack item = player.getItemInHand();
+
+        if (item != null && item.getType() != Material.AIR) {
+            NBTItem nbtItem = new NBTItem(item);
+            if (nbtItem.hasKey("isPortalBreaker") && nbtItem.getBoolean("isPortalBreaker")) {
+                return;
+            }
+        }
+
+        if (isPortalWithinRadius(event.getBlock().getLocation(), 1)) {
+            event.setCancelled(true);
+            player.sendMessage(chatUtils.colour(getConfig().getString("messages.cannot-break")));
+        }
     }
+
+
+
 
     @EventHandler
     public void onEyeOfEnderPlace(BlockPlaceEvent event) {

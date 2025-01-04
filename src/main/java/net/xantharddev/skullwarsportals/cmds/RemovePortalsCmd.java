@@ -48,8 +48,8 @@ public class RemovePortalsCmd implements CommandExecutor {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    allPortalLocations.forEach(loc -> loc.getBlock().setType(Material.AIR)); // Remove portal blocks
-                    DHAPI.removeHologram(entry.getKey()); // Remove hologram
+                    allPortalLocations.forEach(loc -> loc.getBlock().setType(Material.AIR));
+                    DHAPI.removeHologram(entry.getKey());
                 }
             }.runTask(plugin);
 

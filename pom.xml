@@ -63,7 +63,7 @@
           <artifactId>WineSpigot</artifactId>
           <version>1.0</version>
           <scope>system</scope>
-          <systemPath>C:/wine.jar</systemPath>
+          <systemPath>C:/dev/wine.jar</systemPath>
       </dependency>
       <dependency>
           <groupId>de.tr7zw</groupId>
@@ -82,7 +82,7 @@
           <artifactId>FactionsUUID</artifactId>
           <version>1.0</version>
           <scope>system</scope>
-          <systemPath>C:/Factions.jar</systemPath>
+          <systemPath>C:/dev/factions.jar</systemPath>
       </dependency>
       <dependency>
           <groupId>com.google.code.gson</groupId>

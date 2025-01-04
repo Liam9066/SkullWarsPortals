@@ -11,7 +11,6 @@ commands:
     permission: skullwarsportals.giveremover
   skullwarsportalsreload:
     description: Reloads the plugin
-    usage: /<command> reload
     aliases: [swp, skp, portal]
     permission: skullwarsportals.reload
   skportalsremoveall:

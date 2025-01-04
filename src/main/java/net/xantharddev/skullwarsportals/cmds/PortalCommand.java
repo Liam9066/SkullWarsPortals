@@ -45,24 +45,20 @@ public class PortalCommand implements CommandExecutor {
     }
 
     private void givePortalRemover(Player player) {
-        // Retrieve item type, durability, and name from config
         String itemTypeString = plugin.getConfig().getString("items.portal-remover.type");
         int itemDamage = plugin.getConfig().getInt("items.portal-remover.damage");
         String itemName = plugin.getConfig().getString("items.portal-remover.name");
         List<String> loreList = plugin.getConfig().getStringList("items.portal-remover.lore");
 
-        // Ensure valid item type
         Material itemType = Material.getMaterial(itemTypeString);
         if (itemType == null) {
             player.sendMessage(chatUtils.colour(plugin.getConfig().getString("messages.invalid-item-type")));
             return;
         }
 
-        // Create the ItemStack for the portal remover
         ItemStack itemStack = new ItemStack(itemType);
         itemStack.setDurability((short) itemDamage);
 
-        // Set the name of the item if provided in the config
         ItemMeta meta = itemStack.getItemMeta();
         meta.setDisplayName(chatUtils.colour(itemName));
         meta.setLore(chatUtils.colourList(loreList));

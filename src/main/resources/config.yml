@@ -34,9 +34,10 @@ items:
   portal-remover:
     type: STICK
     damage: 0
-    name: "&c&lPortal Remover"
+    name: "&6&lPortal &c&lRemover"
     lore:
-      - "&8Portal Remover"
+      - "&8PORTAL REMOVER"
       - ""
-      - "&fRight click any portal to"
-      - "&fremove them."
+      - "&8»&f By Right clicking a portal"
+      - "&8»&f it will dissappear!."
+      - ""
